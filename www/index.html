@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>My Closet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-main: #0f1712;
+      --card-bg: #18261e;
+      --card-soft: #203328;
+      --text-dark: #e8f0ec;
+      --text-muted: #8ca396;
+      --accent-warm: #d4a359;
+      --accent-green: #2d4a3a;
+      --border-color: #273d30;
+      --led-glow: rgba(212, 163, 89, 0.25);
+      --shadow-soft: 0 15px 35px rgba(0, 0, 0, 0.4);
+      --auth-bg: rgba(10, 15, 12, 0.96);
+      --overlay: rgba(10, 15, 12, 0.85);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body.light-mode {
+      --bg-main: #f4f6f4;
+      --card-bg: #ffffff;
+      --card-soft: #eaece8;
+      --text-dark: #1b2e24;
+      --text-muted: #5c7365;
+      --accent-warm: #2d4a3a;
+      --border-color: #d1dcd5;
+      --led-glow: rgba(45, 74, 58, 0.15);
+      --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --auth-bg: rgba(244, 246, 244, 0.97);
+      --overlay: rgba(30, 45, 36, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+    input, select, textarea { user-select: text; -webkit-user-select: text; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Arabic', sans-serif;
+      background-color: var(--bg-main); color: var(--text-dark);
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0; overflow: hidden; transition: background 0.3s, color 0.3s;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 920px;
+      background: var(--bg-main);
+      display: flex; flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 50px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .app-container {
+        border-radius: 32px;
+        border: 2px solid var(--border-color);
+        height: 88vh;
+      }
+    }
+
+    /* SPLASH SCREEN INTRO */
+    .splash-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 500; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .splash-screen.fade-out { opacity: 0; visibility: hidden; }
+
+    .hanger-anim-icon {
+      width: 70px; height: 70px; color: var(--accent-warm);
+      animation: pulseGlow 2s infinite alternate ease-in-out;
+    }
+    .hanger-anim-icon svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 5px var(--led-glow)); }
+      100% { transform: scale(1.08); filter: drop-shadow(0 0 20px var(--accent-warm)); }
+    }
+
+    /* App Header */
+    .app-header {
+      padding: clamp(12px, 2vh, 18px) 20px; padding-top: calc(clamp(12px, 2vh, 18px) + env(safe-area-inset-top));
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--card-bg); border-bottom: 1px solid var(--border-color); z-index: 10;
+    }
+    .brand-title { font-size: clamp(1rem, 2.2vw, 1.2rem); font-weight: 700; color: var(--text-dark); }
+    .header-profile-icon {
+      width: clamp(32px, 4vw, 38px); height: clamp(32px, 4vw, 38px); border-radius: 50%; background: var(--accent-warm);
+      color: var(--bg-main); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; cursor: pointer; overflow: hidden; font-size: 0.9rem;
+    }
+    body.light-mode .header-profile-icon, body.light-mode .profile-avatar-large { color: #fff; }
+    .header-profile-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* App Content */
+    .app-content { flex: 1; overflow-y: auto; padding: clamp(12px, 2vh, 18px); padding-bottom: calc(85px + env(safe-area-inset-bottom)); }
+    .tab-pane { display: none; flex-direction: column; gap: 14px; height: 100%; }
+    .tab-pane.active { display: flex; }
+
+    #tab-closet {
+      overflow: hidden;
+      justify-content: space-between;
+    }
+    #tab-settings { height: auto; }
+
+    .wardrobe-frame {
+      position: relative; width: 100%;
+      direction: ltr;
+      flex: 1;
+      max-height: 480px;
+      background: var(--card-bg); border-radius: var(--radius-md);
+      border: 5px solid var(--border-color); display: flex; flex-direction: column;
+      overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
+    }
+
+    .door {
+      position: absolute; top: 0; width: 50%; height: 100%;
+      background: linear-gradient(135deg, var(--card-soft) 0%, var(--card-bg) 100%);
+      border: 1px solid var(--border-color); z-index: 20; transition: var(--transition-smooth);
+      display: flex; align-items: center; cursor: pointer; outline: none;
+    }
+    .door.left { left: 0; justify-content: flex-end; padding-right: 12px; }
+    .door.right { right: 0; justify-content: flex-start; padding-left: 12px; }
+    .door-handle { width: 4px; height: 44px; background: var(--accent-warm); border-radius: 3px; box-shadow: 0 0 8px var(--led-glow); }
+    .door.open-left { transform: translateX(-92%); }
+    .door.open-right { transform: translateX(92%); }
+
+    .upper-cabinet {
+      height: 34%; position: relative; border-bottom: 3px solid var(--border-color);
+      background: var(--card-soft); border-radius: 8px; margin: 5px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: inset 0 0 15px var(--led-glow);
+    }
+    .drawer-title { font-size: clamp(0.68rem, 1.5vw, 0.78rem); font-weight: 700; color: var(--accent-warm); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+    .drawer-count { font-size: clamp(0.6rem, 1.3vw, 0.7rem); color: var(--text-muted); margin-top: 2px; }
+    .drawer-handle-bar { position: absolute; bottom: 6px; width: 40px; height: 3px; background: var(--border-color); border-radius: 2px; }
+
+    .drawers-grid {
+      display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+      gap: 5px; flex: 1; background: var(--card-bg); padding: 5px;
+    }
+    .drawer-box {
+      background: var(--card-soft); border: 1px solid var(--border-color); border-radius: 8px;
+      padding: 6px; position: relative; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 10px var(--led-glow);
+    }
+
+    /* FULL SCREEN SIDE PANEL DRAWER PAGE */
+    .side-drawer-page {
+      position: absolute; top: 0; right: -100%; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 150; display: flex; flex-direction: column;
+      padding: 20px; padding-top: calc(20px + env(safe-area-inset-top));
+      transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .side-drawer-page.open { right: 0; }
+    [dir="rtl"] .side-drawer-page { right: auto; left: -100%; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    [dir="rtl"] .side-drawer-page.open { right: auto; left: 0; }
+    [dir="rtl"] .back-circle-btn svg { transform: scaleX(-1); }
+
+    .side-drawer-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .back-circle-btn {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--card-soft);
+      border: 1px solid var(--border-color); color: var(--text-dark);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: var(--transition-smooth); flex-shrink: 0;
+    }
+    .back-circle-btn:hover { background: var(--accent-warm); color: var(--bg-main); }
+    .back-circle-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+    .drawer-items-list, .direct-items-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      flex: 1; overflow-y: auto; padding-bottom: 20px; align-content: start;
+    }
+
+    .item-card-box {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); padding: 8px; display: flex;
+      flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+      transition: var(--transition-smooth); height: auto;
+    }
+    .item-card-box:hover { border-color: var(--accent-warm); }
+    .item-card-box img { max-width: 100%; max-height: 85px; object-fit: contain; }
+    .item-card-title { font-size: clamp(0.72rem, 1.5vw, 0.8rem); font-weight: 600; color: var(--text-dark); text-align: center; word-break: break-word; }
+    .empty-note { grid-column: span 2; text-align: center; color: var(--text-muted); padding: 40px 0; }
+
+    /* GREEN FLOATING ACTION MENU */
+    .green-action-menu-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--overlay); backdrop-filter: blur(4px);
+      z-index: 280; display: none; align-items: center; justify-content: center;
+    }
+    .green-action-menu-overlay.active { display: flex; }
+
+    .green-action-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); padding: 16px; width: 260px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: flex;
+      flex-direction: column; gap: 8px;
+    }
+    .green-action-card button {
+      background: var(--card-soft); border: 1px solid var(--border-color);
+      color: var(--text-dark); padding: 9px 12px; border-radius: var(--radius-sm);
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; text-align: start;
+      transition: var(--transition-smooth); font-family: inherit;
+    }
+    .green-action-card button:hover { background: var(--accent-green); color: #fff; }
+    .green-action-card button.delete-btn { color: #ff5c5c; }
+    .green-action-card button.delete-btn:hover { background: #e63946; color: #fff; }
+
+    /* Settings Page */
+    .settings-group {
+      background: var(--card-bg); border-radius: var(--radius-md); padding: 14px;
+      border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;
+    }
+    .group-title { font-weight: 700; color: var(--accent-warm); font-size: 0.85rem; }
+    .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .setting-label { font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .setting-label svg { width: 18px; height: 18px; stroke: var(--accent-warm); fill: none; stroke-width: 2; }
+    .profile-card-box {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px; background: var(--card-soft); border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .profile-avatar-large {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--accent-warm);
+      color: #0f1712; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; cursor: pointer; overflow: hidden; flex-shrink: 0;
+    }
+    .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+    .editable-name-container {
+      display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600;
+    }
+    .inline-name-input {
+      background: var(--bg-main); border: 1px solid var(--accent-warm); color: var(--text-dark);
+      font-size: 1rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; outline: none;
+      width: 130px; font-family: inherit;
+    }
+    .inline-name-input::selection { background: #3b82f6; color: #ffffff; }
+
+    .edit-pencil-btn { background: none; border: none; cursor: pointer; color: var(--accent-warm); }
+    .edit-pencil-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .photo-hint { font-size: 0.68rem; color: var(--text-muted); }
+
+    .lang-select {
+      background: var(--card-soft); color: var(--text-dark); border: 1px solid var(--border-color);
+      border-radius: 30px; padding: 7px 12px; font-size: 0.78rem; font-family: inherit; outline: none; cursor: pointer;
+    }
+    .lang-select option { background: var(--card-bg); color: var(--text-dark); }
+
+    /* Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; direction: ltr; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--card-soft); transition: .3s; border-radius: 22px; border: 1px solid var(--border-color);
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
+      background-color: var(--accent-warm); transition: .3s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--accent-warm); }
+    input:checked + .slider:before { transform: translateX(18px); background-color: var(--bg-main); }
+
+    /* Bottom Nav Bar */
+    .bottom-nav {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: calc(70px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--card-bg); border-top: 1px solid var(--border-color);
+      display: flex; justify-content: space-around; align-items: center;
+      padding-left: 10px; padding-right: 10px; z-index: 90;
+    }
+    .nav-item {
+      background: none; border: none; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; color: var(--text-muted); cursor: pointer;
+      font-size: clamp(0.65rem, 1.5vw, 0.72rem); font-weight: 600; flex: 1; outline: none; font-family: inherit;
+    }
+    .nav-item svg { width: clamp(20px, 3.5vw, 22px); height: clamp(20px, 3.5vw, 22px); stroke: currentColor; stroke-width: 2; fill: none; }
+    .nav-item.active { color: var(--accent-warm); }
+
+    .nav-center-container { position: relative; width: 50px; display: flex; justify-content: center; }
+    .fab-btn {
+      position: absolute; top: -28px; width: 50px; height: 50px;
+      background: var(--accent-warm); border: 4px solid var(--bg-main);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); outline: none;
+    }
+    .fab-btn svg { width: 22px; height: 22px; stroke: var(--bg-main); stroke-width: 2; fill: none; }
+
+    /* Authentication Overlay */
+    .auth-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+      background: var(--auth-bg); backdrop-filter: blur(20px);
+      z-index: 300; display: flex; overflow-y: auto; padding: 64px 0 50px;
+    }
+    .auth-overlay.hidden { display: none; }
+
+    .auth-top {
+      position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
+      display: flex; justify-content: space-between; align-items: center; z-index: 2;
+    }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--card-soft);
+      border: 1px solid var(--border-color); color: var(--accent-warm);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none;
+    }
+    .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    .local-notice {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 14px; padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      background: #7a5a1e; color: #fff; font-size: 0.7rem; text-align: center; z-index: 2;
+    }
+
+    .auth-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: 24px; width: 360px; max-width: 90vw;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); display: flex;
+      flex-direction: column; gap: 12px; text-align: center; margin: auto;
+    }
+    .auth-card h2 { font-size: 1.3rem; font-weight: 700; color: var(--text-dark); }
+    .auth-card p { font-size: 0.78rem; color: var(--text-muted); }
+
+    .auth-input-group { display: flex; flex-direction: column; gap: 5px; text-align: start; }
+    .auth-input-group label { font-size: 0.7rem; font-weight: 600; color: var(--accent-warm); text-transform: uppercase; }
+    .auth-input-group input {
+      background: var(--card-soft); border: 1px solid var(--border-color);
+      padding: 9px 12px; border-radius: var(--radius-sm); color: var(--text-dark);
+      font-size: 0.82rem; outline: none; font-family: inherit; width: 100%;
+    }
+    .auth-input-group input:focus { border-color: var(--accent-warm); }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .auth-msg { font-size: 0.74rem; color: #ff5c5c; min-height: 0; }
+    .auth-msg:empty { display: none; }
+    .auth-msg.ok { color: #4ade80; }
+
+    .btn-google {
+      background: #ffffff; color: #222; border: 1px solid #ddd; padding: 10px;
+      border-radius: 30px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px; outline: none; font-family: inherit;
+    }
+
+    .btn-essembl {
+      background: var(--accent-warm); color: var(--bg-main); border: none;
+      padding: 11px 18px; border-radius: 30px; font-size: 0.82rem;
+      font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; outline: none; font-family: inherit;
+    }
+    body.light-mode .btn-essembl { color: #fff; }
+    .btn-essembl:disabled { opacity: 0.6; cursor: default; }
+    .btn-outline {
+      background: transparent; color: var(--text-muted); border: 1px solid var(--border-color);
+      padding: 7px 14px; border-radius: 30px; font-size: 0.78rem; cursor: pointer; outline: none; font-family: inherit;
+    }
+
+    .auth-footer-link { font-size: 0.76rem; color: var(--accent-warm); cursor: pointer; margin-top: 3px; text-decoration: underline; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: var(--overlay); backdrop-filter: blur(10px);
+      z-index: 200; display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: var(--card-bg); padding: 20px; border-radius: var(--radius-lg);
+      width: 340px; max-width: 90vw; display: flex; flex-direction: column; gap: 12px;
+      border: 1px solid var(--border-color); max-height: 92vh; overflow-y: auto;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
+      background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--accent-warm);
+      padding: 10px 16px; border-radius: 30px; font-size: 0.78rem; z-index: 600; max-width: 88vw; text-align: center;
+      opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    #photoInput, #cameraInput, #avatarInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- SPLASH SCREEN ANIMATION -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="hanger-anim-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2c1.5 0 3 1.5 3 3v1h-6V5c0-1.5 1.5-3 3-3z"/><path d="M19 7H5c-1.1 0-2 .9-2 2v2c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V9c0-1.1-.9-2-2-2z"/><path d="M12 15v6"/></svg>
+    </div>
+    <h2 style="font-weight: 700; color: var(--accent-warm); letter-spacing: 1px;">MY CLOSET</h2>
+  </div>
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div class="auth-overlay" id="authOverlay">
+
+    <div class="auth-top">
+      <select id="authLang" class="lang-select" onchange="setLang(this.value)">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+      <button class="icon-btn" id="authThemeBtn" onclick="quickToggleTheme()" aria-label="theme"></button>
+    </div>
+
+    <div class="local-notice" id="localNotice" data-i18n="localNotice"></div>
+
+    <!-- LOGIN SCREEN -->
+    <div class="auth-card" id="loginCard">
+      <h2 data-i18n="welcome">Welcome Back</h2>
+      <p data-i18n="loginSub">Log in to access your My Closet app</p>
+
+      <button class="btn-google" onclick="doGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        <span data-i18n="google">Continue with Google</span>
+      </button>
+
+      <div class="auth-input-group">
+        <label data-i18n="email">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="name@gmail.com" autocomplete="email" dir="ltr">
+      </div>
+
+      <div class="auth-input-group">
+        <label data-i18n="password">Password</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" dir="ltr">
+      </div>
+
+      <div class="auth-msg" id="loginMsg"></div>
+      <button class="btn-essembl" id="btnLogin" style="width: 100%;" onclick="doLogin()" data-i18n="signIn">Sign In</button>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 4px; gap: 8px;">
+        <span class="auth-footer-link" onclick="showAuthPage('forgot')" data-i18n="forgot">Forgot Password?</span>
+        <span class="auth-footer-link" onclick="showAuthPage('signup')" data-i18n="createLink">Create Account</span>
+      </div>
+    </div>
+
+    <!-- CREATE ACCOUNT SCREEN -->
+    <div class="auth-card" id="signupCard" style="display: none;">
+      <h2 data-i18n="createTitle">Create Account</h2>
+      <p data-i18n="createSub">Fill in your details to join My Closet</p>
+
+      <div class="auth-input-group">
+        <label data-i18n="fullName">Full Name</label>
+        <input type="text" id="signupName" autocomplete="name">
+      </div>
+
+      <div class="auth-input-group">
+        <label data-i18n="email">Email Address</label>
+        <input type="email" id="signupEmail" placeholder="name@gmail.com" autocomplete="email" dir="ltr">
+      </div>
+
+      <div class="row-2">
+        <div class="auth-input-group">
+          <label data-i18n="dob">Date of Birth</label>
+          <input type="date" id="signupDob" onchange="autoAge()">
+        </div>
+        <div class="auth-input-group">
+          <label data-i18n="age">Age</label>
+          <input type="number" id="signupAge" min="1" max="120">
+        </div>
+      </div>
+
+      <div class="auth-input-group">
+        <label data-i18n="password">Password</label>
+        <input type="password" id="signupPass" placeholder="••••••••" autocomplete="new-password" dir="ltr">
+      </div>
+
+      <div class="auth-input-group">
+        <label data-i18n="confirmPass">Confirm Password</label>
+        <input type="password" id="signupPass2" placeholder="••••••••" autocomplete="new-password" dir="ltr">
+      </div>
+
+      <div class="auth-msg" id="signupMsg"></div>
+      <button class="btn-essembl" id="btnSignup" style="width: 100%;" onclick="doSignup()" data-i18n="register">Register Now</button>
+
+      <div style="margin-top: 4px;">
+        <span class="auth-footer-link" onclick="showAuthPage('login')" data-i18n="haveAcc">Already have an account? Sign In</span>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD SCREEN -->
+    <div class="auth-card" id="forgotCard" style="display: none;">
+      <h2 data-i18n="resetTitle">Reset Password</h2>
+      <p data-i18n="resetSub">Enter your email to receive a password reset link</p>
+
+      <div class="auth-input-group">
+        <label data-i18n="email">Email Address</label>
+        <input type="email" id="forgotEmail" placeholder="name@gmail.com" autocomplete="email" dir="ltr">
+      </div>
+
+      <div class="auth-msg" id="forgotMsg"></div>
+      <button class="btn-essembl" id="btnForgot" style="width: 100%;" onclick="doReset()" data-i18n="sendLink">Send Reset Link</button>
+
+      <div style="margin-top: 4px;">
+        <span class="auth-footer-link" onclick="showAuthPage('login')" data-i18n="backSignIn">Back to Sign In</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- APP CONTAINER -->
+  <div class="app-container">
+
+    <div class="app-header">
+      <div class="brand-title" id="headerTitle">My Closet</div>
+      <div class="header-profile-icon" id="headerProfileAvatar" onclick="switchTab('settings')">P</div>
+    </div>
+
+    <div class="app-content">
+
+      <!-- TAB 1: CLOSET -->
+      <div class="tab-pane active" id="tab-closet">
+        <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; justify-content: space-between; gap: 8px;">
+          <span data-i18n="mainWardrobe">MAIN WARDROBE</span>
+          <span data-i18n="tapHint">Tap doors & drawers</span>
+        </div>
+
+        <div class="wardrobe-frame">
+          <div class="door left" id="doorLeft" onclick="toggleCloset()"><div class="door-handle"></div></div>
+          <div class="door right" id="doorRight" onclick="toggleCloset()"><div class="door-handle"></div></div>
+
+          <div class="upper-cabinet" id="drawer-hanging" onclick="openSideDrawerPage('hanging')">
+            <span class="drawer-title" data-i18n="c_hanging">Hoodies & Jackets</span>
+            <span class="drawer-count" id="count-hanging">0</span>
+            <div class="drawer-handle-bar"></div>
+          </div>
+
+          <div class="drawers-grid">
+            <div class="drawer-box" id="drawer-pants" onclick="openSideDrawerPage('pants')">
+              <span class="drawer-title" data-i18n="c_pants">Pants</span>
+              <span class="drawer-count" id="count-pants">0</span>
+              <div class="drawer-handle-bar"></div>
+            </div>
+            <div class="drawer-box" id="drawer-tops" onclick="openSideDrawerPage('tops')">
+              <span class="drawer-title" data-i18n="c_tops">Tops & Shirts</span>
+              <span class="drawer-count" id="count-tops">0</span>
+              <div class="drawer-handle-bar"></div>
+            </div>
+            <div class="drawer-box" id="drawer-underwear" onclick="openSideDrawerPage('underwear')">
+              <span class="drawer-title" data-i18n="c_underwear">Underwear</span>
+              <span class="drawer-count" id="count-underwear">0</span>
+              <div class="drawer-handle-bar"></div>
+            </div>
+            <div class="drawer-box" id="drawer-socks" onclick="openSideDrawerPage('socks')">
+              <span class="drawer-title" data-i18n="c_socks">Socks</span>
+              <span class="drawer-count" id="count-socks">0</span>
+              <div class="drawer-handle-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DAILY WEAR -->
+      <div class="tab-pane" id="tab-daily">
+        <div style="font-size: 0.78rem; font-weight:700; color: var(--accent-warm);" data-i18n="dailyHeader">DAILY WORN GARMENTS</div>
+        <div class="direct-items-grid" id="dailyRackDirectGrid"></div>
+      </div>
+
+      <!-- TAB 3: LAUNDRY -->
+      <div class="tab-pane" id="tab-laundry">
+        <div style="font-size: 0.78rem; font-weight:700; color: var(--accent-warm);" data-i18n="laundryHeader">LAUNDRY BASKET</div>
+        <div class="direct-items-grid" id="laundryDirectGrid"></div>
+      </div>
+
+      <!-- TAB 4: SETTINGS -->
+      <div class="tab-pane" id="tab-settings">
+        <div class="settings-group">
+          <div class="group-title" data-i18n="accountSettings">Account Settings</div>
+
+          <div class="profile-card-box">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="profile-avatar-large" id="settingsAvatar" onclick="document.getElementById('avatarInput').click()">P</div>
+
+              <div>
+                <div class="editable-name-container" id="nameContainer">
+                  <span id="profileNameText">Pure</span>
+                  <button class="edit-pencil-btn" onclick="startInlineNameEdit()">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                </div>
+                <div class="photo-hint" id="emailText" dir="ltr"></div>
+              </div>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" onchange="updateProfileAvatar(event)">
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="group-title" data-i18n="appearance">Appearance</div>
+          <div class="setting-row">
+            <span class="setting-label"><span id="themeIcon"></span><span data-i18n="darkLight">Dark / Light Mode</span></span>
+            <label class="switch">
+              <input type="checkbox" id="themeToggle" onchange="setTheme(this.checked ? 'light' : 'dark')">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span data-i18n="language">Language</span>
+            </span>
+            <select id="settingsLang" class="lang-select" onchange="setLang(this.value)">
+              <option value="ar">العربية</option>
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="group-title" style="color: #ff5c5c;" data-i18n="session">Session Control</div>
+          <div class="setting-row">
+            <span style="font-size:0.82rem;" data-i18n="signOutLabel">Sign Out</span>
+            <button class="btn-outline" style="color: #ff5c5c; border-color: #ff5c5c;" onclick="handleLogOut()" data-i18n="logOut">Log Out</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FULL SCREEN SIDE PANEL PAGE FOR WARDROBE DRAWERS -->
+    <div class="side-drawer-page" id="sideDrawerPage">
+      <div class="side-drawer-header">
+        <div class="back-circle-btn" onclick="closeSideDrawerPage()">
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </div>
+        <h3 id="sideDrawerTitle" style="font-weight: 700; font-size: 1.05rem; color: var(--text-dark);"></h3>
+      </div>
+
+      <div class="drawer-items-list" id="sideDrawerItemsGrid"></div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <button class="nav-item active" id="nav-closet" onclick="switchTab('closet')">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span data-i18n="tabCloset">Closet</span>
+      </button>
+
+      <button class="nav-item" id="nav-daily" onclick="switchTab('daily')">
+        <svg viewBox="0 0 24 24"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H4v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10h.35a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg>
+        <span data-i18n="tabWorn">Worn</span>
+      </button>
+
+      <div class="nav-center-container">
+        <div class="fab-btn" onclick="openAddSourceModal()">
+          <svg viewBox="0 0 24 24"><path d="M12 2c1.5 0 3 1.5 3 3v1h-6V5c0-1.5 1.5-3 3-3z"/><path d="M19 7H5c-1.1 0-2 .9-2 2v2c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V9c0-1.1-.9-2-2-2z"/><path d="M12 15v6"/></svg>
+        </div>
+      </div>
+
+      <button class="nav-item" id="nav-laundry" onclick="switchTab('laundry')">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span data-i18n="tabLaundry">Laundry</span>
+      </button>
+
+      <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .69.41 1.31 1.03 1.51h.07a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.07a1.65 1.65 0 0 0-1.03 1.51z"></path></svg>
+        <span data-i18n="tabSettings">Settings</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- GREEN FLOATING ACTION MENU -->
+  <div class="green-action-menu-overlay" id="greenActionOverlay" onclick="closeGreenActionMenu(event)">
+    <div class="green-action-card" id="greenActionCard">
+      <button id="actWear" data-emoji="👔" data-i18n="actWear" onclick="executeAction('wear')">Move to Daily Wear</button>
+      <button id="actLaundry" data-emoji="🧺" data-i18n="actLaundry" onclick="executeAction('laundry')">Move to Laundry</button>
+      <button id="actBack" data-emoji="↩️" data-i18n="actBack" onclick="executeAction('back')">Return to Wardrobe</button>
+      <button class="delete-btn" data-emoji="🗑️" data-i18n="actDelete" onclick="executeAction('delete')">Delete Garment</button>
+    </div>
+  </div>
+
+  <!-- SOURCE MODAL -->
+  <div class="modal-overlay" id="sourceModal">
+    <div class="modal-card">
+      <h3 style="color: var(--text-dark); text-align: center;" data-i18n="addGarment">Add New Garment</h3>
+      <button class="btn-essembl" data-emoji="📸" data-i18n="takePhoto" onclick="triggerCamera()">Take Photo (Camera)</button>
+      <button class="btn-essembl" style="background: var(--card-soft); color: var(--text-dark); border: 1px solid var(--border-color);" data-emoji="🖼️" data-i18n="gallery" onclick="document.getElementById('photoInput').click()">Choose from Gallery</button>
+      <button class="btn-essembl" style="background: transparent; color: var(--text-muted);" data-i18n="cancel" onclick="closeSourceModal()">Cancel</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" onchange="handleImageUpload(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImageUpload(event)">
+  </div>
+
+  <!-- ASSIGNMENT MODAL -->
+  <div class="modal-overlay" id="assignmentModal">
+    <div class="modal-card">
+      <h3 style="color: var(--text-dark); text-align: center;" data-i18n="selectDrawer">Select Storage Drawer</h3>
+      <div style="width: 100%; height: 120px; background: var(--card-soft); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <img id="previewUploadedImg" src="" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+      </div>
+
+      <div class="auth-input-group">
+        <label data-i18n="garmentName">Garment Name / Title</label>
+        <input type="text" id="garmentNameInput" data-i18n-ph="garmentPh" maxlength="40">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="btn-essembl" data-value="hanging" data-emoji="🧥" data-i18n="c_hanging" onclick="selectDrawerOption(this)" style="grid-column: span 2;">Hoodies & Jackets</button>
+        <button class="btn-essembl" data-value="pants" data-emoji="👖" data-i18n="c_pants" onclick="selectDrawerOption(this)">Pants</button>
+        <button class="btn-essembl" data-value="tops" data-emoji="👕" data-i18n="c_tops" onclick="selectDrawerOption(this)">Tops</button>
+        <button class="btn-essembl" data-value="underwear" data-emoji="🩲" data-i18n="c_underwear" onclick="selectDrawerOption(this)">Underwear</button>
+        <button class="btn-essembl" data-value="socks" data-emoji="🧦" data-i18n="c_socks" onclick="selectDrawerOption(this)">Socks</button>
+      </div>
+
+      <button class="btn-essembl" id="btnSaveGarment" style="width: 100%; margin-top: 4px;" data-i18n="saveWardrobe" onclick="confirmGarmentAssignment()">Save to Wardrobe</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase (compat SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    /* =====================================================
+       1) FIREBASE CONFIG  —  بدّل هاد القيم بالقيم ديالك
+       (Project settings → Your apps → firebaseConfig)
+       ===================================================== */
+    const firebaseConfig = {
+      apiKey: "PASTE_API_KEY",
+      authDomain: "PASTE_AUTH_DOMAIN",
+      projectId: "PASTE_PROJECT_ID",
+      storageBucket: "PASTE_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
+      appId: "PASTE_APP_ID"
+    };
+
+    /* =====================================================
+       2) TRANSLATIONS
+       ===================================================== */
+    const T = {
+      en: {
+        welcome: "Welcome Back", loginSub: "Log in to access your My Closet app", google: "Continue with Google",
+        email: "Email Address", password: "Password", signIn: "Sign In", forgot: "Forgot Password?", createLink: "Create Account",
+        createTitle: "Create Account", createSub: "Fill in your details to join My Closet", fullName: "Full Name",
+        dob: "Date of Birth", age: "Age", confirmPass: "Confirm Password", register: "Register Now",
+        haveAcc: "Already have an account? Sign In", resetTitle: "Reset Password",
+        resetSub: "Enter your email to receive a password reset link", sendLink: "Send Reset Link", backSignIn: "Back to Sign In",
+        errFill: "Please fill in all required fields.", errEmail: "Invalid email address.",
+        errPassShort: "Password must be at least 6 characters.", errPassMatch: "Passwords do not match.",
+        errWrong: "Incorrect email or password.", errExists: "This email is already registered.",
+        errNoUser: "No account found with this email.", errNetwork: "Network error. Check your connection.",
+        errMany: "Too many attempts. Try again later.", errGeneric: "Something went wrong. Please try again.",
+        resetSent: "Reset link sent! Check your inbox (and spam).",
+        errGoogleLocal: "Google sign-in needs the Firebase setup.", errResetLocal: "Reset emails need the Firebase setup.",
+        errData: "Could not load/save your data. Check Firestore rules.",
+        localNotice: "Test mode: accounts are stored only on this device. Add your Firebase config for real accounts.",
+        errPopup: "Sign-in window was closed.",
+        mainWardrobe: "MAIN WARDROBE", tapHint: "Tap doors & drawers",
+        c_hanging: "Hoodies & Jackets", c_pants: "Pants", c_tops: "Tops & Shirts", c_underwear: "Underwear", c_socks: "Socks",
+        dailyHeader: "DAILY WORN GARMENTS", laundryHeader: "LAUNDRY BASKET",
+        tabCloset: "Closet", tabWorn: "Worn", tabLaundry: "Laundry", tabSettings: "Settings",
+        titleCloset: "My Closet", titleWorn: "Worn Garments", titleLaundry: "Laundry Basket", titleSettings: "Settings",
+        noSection: "No garments in this section", noneHere: "No garments here right now.",
+        actWear: "Move to Daily Wear", actLaundry: "Move to Laundry", actBack: "Return to Wardrobe", actDelete: "Delete Garment",
+        addGarment: "Add New Garment", takePhoto: "Take Photo (Camera)", gallery: "Choose from Gallery", cancel: "Cancel",
+        selectDrawer: "Select Storage Drawer", garmentName: "Garment Name / Title", garmentPh: "e.g. Black Jacket",
+        saveWardrobe: "Save to Wardrobe", garment: "Garment",
+        accountSettings: "Account Settings", appearance: "Appearance", darkLight: "Dark / Light Mode", language: "Language",
+        session: "Session Control", signOutLabel: "Sign Out", logOut: "Log Out", items: "{n} items"
+      },
+      ar: {
+        welcome: "مرحبا بعودتك", loginSub: "سجّل الدخول للوصول إلى تطبيق My Closet", google: "المتابعة باستخدام Google",
+        email: "البريد الإلكتروني", password: "كلمة السر", signIn: "تسجيل الدخول", forgot: "نسيت كلمة السر؟", createLink: "إنشاء حساب",
+        createTitle: "إنشاء حساب", createSub: "أدخل معلوماتك للانضمام إلى My Closet", fullName: "الاسم الكامل",
+        dob: "تاريخ الميلاد", age: "العمر", confirmPass: "تأكيد كلمة السر", register: "سجّل الآن",
+        haveAcc: "عندك حساب؟ سجّل الدخول", resetTitle: "إعادة تعيين كلمة السر",
+        resetSub: "أدخل بريدك الإلكتروني لتتوصل برابط إعادة التعيين", sendLink: "إرسال الرابط", backSignIn: "العودة لتسجيل الدخول",
+        errFill: "المرجو ملء جميع الحقول المطلوبة.", errEmail: "البريد الإلكتروني غير صالح.",
+        errPassShort: "كلمة السر يجب أن تكون 6 أحرف على الأقل.", errPassMatch: "كلمتا السر غير متطابقتين.",
+        errWrong: "البريد أو كلمة السر غير صحيحة.", errExists: "هذا البريد مسجل مسبقا.",
+        errNoUser: "لا يوجد حساب بهذا البريد.", errNetwork: "مشكل في الشبكة. تأكد من الاتصال.",
+        errMany: "محاولات كثيرة. حاول لاحقا.", errGeneric: "وقع خطأ. حاول مرة أخرى.",
+        resetSent: "تم إرسال الرابط! تفقد بريدك (والسبام).",
+        errGoogleLocal: "الدخول بـ Google يتطلب إعداد Firebase.", errResetLocal: "رسائل إعادة التعيين تتطلب إعداد Firebase.",
+        errData: "تعذر حفظ/تحميل بياناتك. تأكد من قواعد Firestore.",
+        localNotice: "وضع التجربة: الحسابات محفوظة على هذا الجهاز فقط. أضف إعدادات Firebase للحسابات الحقيقية.",
+        errPopup: "تم إغلاق نافذة تسجيل الدخول.",
+        mainWardrobe: "الخزانة الرئيسية", tapHint: "اضغط على الأبواب والأدراج",
+        c_hanging: "هوديات وجاكيتات", c_pants: "سراويل", c_tops: "قمصان وتيشورتات", c_underwear: "ملابس داخلية", c_socks: "جوارب",
+        dailyHeader: "الملابس المستعملة اليوم", laundryHeader: "سلة الغسيل",
+        tabCloset: "الخزانة", tabWorn: "المرتداة", tabLaundry: "الغسيل", tabSettings: "الإعدادات",
+        titleCloset: "My Closet", titleWorn: "الملابس المرتداة", titleLaundry: "سلة الغسيل", titleSettings: "الإعدادات",
+        noSection: "لا توجد ملابس في هذا القسم", noneHere: "لا توجد ملابس هنا حاليا.",
+        actWear: "نقل إلى الملابس اليومية", actLaundry: "نقل إلى الغسيل", actBack: "إرجاع إلى الخزانة", actDelete: "حذف القطعة",
+        addGarment: "إضافة قطعة جديدة", takePhoto: "التقاط صورة (الكاميرا)", gallery: "اختيار من المعرض", cancel: "إلغاء",
+        selectDrawer: "اختر الدرج", garmentName: "اسم القطعة", garmentPh: "مثال: جاكيت أسود",
+        saveWardrobe: "حفظ في الخزانة", garment: "قطعة",
+        accountSettings: "إعدادات الحساب", appearance: "المظهر", darkLight: "الوضع الليلي / النهاري", language: "اللغة",
+        session: "الجلسة", signOutLabel: "تسجيل الخروج", logOut: "خروج", items: "{n} قطعة"
+      },
+      fr: {
+        welcome: "Bon retour", loginSub: "Connectez-vous pour accéder à My Closet", google: "Continuer avec Google",
+        email: "Adresse e-mail", password: "Mot de passe", signIn: "Se connecter", forgot: "Mot de passe oublié ?", createLink: "Créer un compte",
+        createTitle: "Créer un compte", createSub: "Renseignez vos informations pour rejoindre My Closet", fullName: "Nom complet",
+        dob: "Date de naissance", age: "Âge", confirmPass: "Confirmer le mot de passe", register: "S'inscrire",
+        haveAcc: "Déjà un compte ? Se connecter", resetTitle: "Réinitialiser le mot de passe",
+        resetSub: "Entrez votre e-mail pour recevoir un lien de réinitialisation", sendLink: "Envoyer le lien", backSignIn: "Retour à la connexion",
+        errFill: "Veuillez remplir tous les champs obligatoires.", errEmail: "Adresse e-mail invalide.",
+        errPassShort: "Le mot de passe doit contenir au moins 6 caractères.", errPassMatch: "Les mots de passe ne correspondent pas.",
+        errWrong: "E-mail ou mot de passe incorrect.", errExists: "Cet e-mail est déjà utilisé.",
+        errNoUser: "Aucun compte avec cet e-mail.", errNetwork: "Erreur réseau. Vérifiez votre connexion.",
+        errMany: "Trop de tentatives. Réessayez plus tard.", errGeneric: "Une erreur est survenue. Réessayez.",
+        resetSent: "Lien envoyé ! Vérifiez votre boîte mail (et les spams).",
+        errGoogleLocal: "La connexion Google nécessite la configuration de Firebase.", errResetLocal: "L'envoi d'e-mails nécessite la configuration de Firebase.",
+        errData: "Impossible de charger/enregistrer vos données. Vérifiez les règles Firestore.",
+        localNotice: "Mode test : comptes enregistrés uniquement sur cet appareil. Ajoutez votre config Firebase pour de vrais comptes.",
+        errPopup: "Fenêtre de connexion fermée.",
+        mainWardrobe: "GARDE-ROBE PRINCIPALE", tapHint: "Touchez les portes et tiroirs",
+        c_hanging: "Sweats & Vestes", c_pants: "Pantalons", c_tops: "Hauts & Chemises", c_underwear: "Sous-vêtements", c_socks: "Chaussettes",
+        dailyHeader: "VÊTEMENTS PORTÉS", laundryHeader: "PANIER À LINGE",
+        tabCloset: "Armoire", tabWorn: "Portés", tabLaundry: "Linge", tabSettings: "Réglages",
+        titleCloset: "My Closet", titleWorn: "Vêtements portés", titleLaundry: "Panier à linge", titleSettings: "Réglages",
+        noSection: "Aucun vêtement dans cette section", noneHere: "Aucun vêtement ici pour le moment.",
+        actWear: "Mettre dans les vêtements portés", actLaundry: "Mettre au linge", actBack: "Remettre dans l'armoire", actDelete: "Supprimer le vêtement",
+        addGarment: "Ajouter un vêtement", takePhoto: "Prendre une photo", gallery: "Choisir dans la galerie", cancel: "Annuler",
+        selectDrawer: "Choisir le tiroir", garmentName: "Nom du vêtement", garmentPh: "ex. Veste noire",
+        saveWardrobe: "Enregistrer", garment: "Vêtement",
+        accountSettings: "Paramètres du compte", appearance: "Apparence", darkLight: "Mode sombre / clair", language: "Langue",
+        session: "Session", signOutLabel: "Se déconnecter", logOut: "Déconnexion", items: "{n} articles"
+      },
+      de: {
+        welcome: "Willkommen zurück", loginSub: "Melde dich an, um My Closet zu nutzen", google: "Weiter mit Google",
+        email: "E-Mail-Adresse", password: "Passwort", signIn: "Anmelden", forgot: "Passwort vergessen?", createLink: "Konto erstellen",
+        createTitle: "Konto erstellen", createSub: "Gib deine Daten ein, um My Closet beizutreten", fullName: "Vollständiger Name",
+        dob: "Geburtsdatum", age: "Alter", confirmPass: "Passwort bestätigen", register: "Jetzt registrieren",
+        haveAcc: "Schon ein Konto? Anmelden", resetTitle: "Passwort zurücksetzen",
+        resetSub: "Gib deine E-Mail ein, um einen Link zum Zurücksetzen zu erhalten", sendLink: "Link senden", backSignIn: "Zurück zur Anmeldung",
+        errFill: "Bitte alle Pflichtfelder ausfüllen.", errEmail: "Ungültige E-Mail-Adresse.",
+        errPassShort: "Das Passwort muss mindestens 6 Zeichen haben.", errPassMatch: "Die Passwörter stimmen nicht überein.",
+        errWrong: "E-Mail oder Passwort falsch.", errExists: "Diese E-Mail ist bereits registriert.",
+        errNoUser: "Kein Konto mit dieser E-Mail gefunden.", errNetwork: "Netzwerkfehler. Prüfe deine Verbindung.",
+        errMany: "Zu viele Versuche. Versuche es später erneut.", errGeneric: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+        resetSent: "Link gesendet! Prüfe dein Postfach (und Spam).",
+        errGoogleLocal: "Google-Anmeldung erfordert die Firebase-Einrichtung.", errResetLocal: "E-Mails zum Zurücksetzen erfordern die Firebase-Einrichtung.",
+        errData: "Daten konnten nicht geladen/gespeichert werden. Prüfe die Firestore-Regeln.",
+        localNotice: "Testmodus: Konten nur auf diesem Gerät gespeichert. Füge deine Firebase-Konfiguration für echte Konten hinzu.",
+        errPopup: "Anmeldefenster geschlossen.",
+        mainWardrobe: "HAUPTKLEIDERSCHRANK", tapHint: "Tippe auf Türen & Schubladen",
+        c_hanging: "Hoodies & Jacken", c_pants: "Hosen", c_tops: "Oberteile & Hemden", c_underwear: "Unterwäsche", c_socks: "Socken",
+        dailyHeader: "GETRAGENE KLEIDUNG", laundryHeader: "WÄSCHEKORB",
+        tabCloset: "Schrank", tabWorn: "Getragen", tabLaundry: "Wäsche", tabSettings: "Einstellungen",
+        titleCloset: "My Closet", titleWorn: "Getragene Kleidung", titleLaundry: "Wäschekorb", titleSettings: "Einstellungen",
+        noSection: "Keine Kleidungsstücke in diesem Bereich", noneHere: "Derzeit keine Kleidungsstücke hier.",
+        actWear: "Zu getragener Kleidung", actLaundry: "In die Wäsche", actBack: "Zurück in den Schrank", actDelete: "Kleidungsstück löschen",
+        addGarment: "Neues Kleidungsstück", takePhoto: "Foto aufnehmen", gallery: "Aus Galerie wählen", cancel: "Abbrechen",
+        selectDrawer: "Schublade wählen", garmentName: "Name des Kleidungsstücks", garmentPh: "z. B. Schwarze Jacke",
+        saveWardrobe: "Im Schrank speichern", garment: "Kleidungsstück",
+        accountSettings: "Kontoeinstellungen", appearance: "Darstellung", darkLight: "Dunkel- / Hellmodus", language: "Sprache",
+        session: "Sitzung", signOutLabel: "Abmelden", logOut: "Abmelden", items: "{n} Teile"
+      }
+    };
+
+    /* =====================================================
+       3) HELPERS & GLOBAL STATE
+       ===================================================== */
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const CATS = ['hanging', 'pants', 'tops', 'underwear', 'socks'];
+
+    function detectLang() {
+      const l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+      return T[l] ? l : 'en';
+    }
+    let LANG = localStorage.getItem('mc_lang') || detectLang();
+    let THEME = localStorage.getItem('mc_theme') || 'dark';
+
+    let closetOpen = false;
+    let pendingImageSrc = null;
+    let activeCategory = null;
+    let selectedTargetDrawer = 'hanging';
+    let activeSelectedItem = null;
+    let currentTab = 'closet';
+    let currentUser = null;
+    let profile = null;
+    let signingUp = false;
+    let entering = false;
+
+    let wardrobeData = { hanging: [], pants: [], tops: [], underwear: [], socks: [], dailyRack: [], laundry: [] };
+
+    function t(k, v) {
+      let s = (T[LANG] && T[LANG][k]) || T.en[k] || k;
+      if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]);
+      return s;
+    }
+
+    let toastTimer = null;
+    function toast(msg) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    /* =====================================================
+       4) BACKENDS  (Firebase = real  |  Local = test mode)
+       ===================================================== */
+    const FirebaseBackend = {
+      init() {
+        firebase.initializeApp(firebaseConfig);
+        this.auth = firebase.auth();
+        this.db = firebase.firestore();
+      },
+      _u(u) { return u ? { uid: u.uid, email: u.email, name: u.displayName || '', photo: u.photoURL || '' } : null; },
+      onAuth(cb) { this.auth.onAuthStateChanged(u => cb(this._u(u))); },
+      async signUp(email, pass, name) {
+        const c = await this.auth.createUserWithEmailAndPassword(email, pass);
+        try { await c.user.updateProfile({ displayName: name }); } catch (e) {}
+        return this._u(c.user);
+      },
+      async signIn(email, pass) { await this.auth.signInWithEmailAndPassword(email, pass); },
+      async google() { await this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); },
+      async reset(email) { await this.auth.sendPasswordResetEmail(email); },
+      async out() { await this.auth.signOut(); },
+      _doc(uid) { return this.db.collection('users').doc(uid); },
+      async getProfile(uid) { const d = await this._doc(uid).get(); return d.exists ? d.data() : null; },
+      async setProfile(uid, patch) { await this._doc(uid).set(patch, { merge: true }); },
+      async getGarments(uid) { const s = await this._doc(uid).collection('garments').get(); return s.docs.map(d => d.data()); },
+      async setGarment(uid, g) { await this._doc(uid).collection('garments').doc(String(g.id)).set(g); },
+      async delGarment(uid, id) { await this._doc(uid).collection('garments').doc(String(id)).delete(); }
+    };
+
+    const LocalBackend = {
+      init() {},
+      _users() { try { return JSON.parse(localStorage.getItem('mc_users') || '{}'); } catch (e) { return {}; } },
+      _saveUsers(u) { localStorage.setItem('mc_users', JSON.stringify(u)); },
+      _data(uid) { try { return JSON.parse(localStorage.getItem('mc_data_' + uid) || '{}'); } catch (e) { return {}; } },
+      _saveData(uid, d) { localStorage.setItem('mc_data_' + uid, JSON.stringify(d)); },
+      onAuth(cb) {
+        this.cb = cb;
+        const em = localStorage.getItem('mc_session');
+        const u = em ? this._users()[em] : null;
+        cb(u ? { uid: u.uid, email: em, name: u.name } : null);
+      },
+      async signUp(email, pass, name) {
+        email = email.toLowerCase();
+        const us = this._users();
+        if (us[email]) throw { code: 'auth/email-already-in-use' };
+        const uid = 'l_' + Date.now();
+        us[email] = { uid, pass, name };
+        this._saveUsers(us);
+        localStorage.setItem('mc_session', email);
+        return { uid, email, name };
+      },
+      async signIn(email, pass) {
+        email = email.toLowerCase();
+        const u = this._users()[email];
+        if (!u) throw { code: 'auth/user-not-found' };
+        if (u.pass !== pass) throw { code: 'auth/wrong-password' };
+        localStorage.setItem('mc_session', email);
+        this.cb && this.cb({ uid: u.uid, email, name: u.name });
+      },
+      async google() { throw { code: 'local/google' }; },
+      async reset() { throw { code: 'local/reset' }; },
+      async out() { localStorage.removeItem('mc_session'); },
+      async getProfile(uid) { return this._data(uid).profile || null; },
+      async setProfile(uid, patch) { const d = this._data(uid); d.profile = Object.assign(d.profile || {}, patch); this._saveData(uid, d); },
+      async getGarments(uid) { return Object.values(this._data(uid).garments || {}); },
+      async setGarment(uid, g) { const d = this._data(uid); d.garments = d.garments || {}; d.garments[g.id] = g; this._saveData(uid, d); },
+      async delGarment(uid, id) { const d = this._data(uid); if (d.garments) delete d.garments[id]; this._saveData(uid, d); }
+    };
+
+    let CONFIGURED = typeof firebase !== 'undefined' && firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith('PASTE');
+    let Backend = LocalBackend;
+    if (CONFIGURED) {
+      try { FirebaseBackend.init(); Backend = FirebaseBackend; }
+      catch (e) { console.error(e); CONFIGURED = false; }
+    }
+
+    function errKey(e) {
+      const c = (e && e.code) || '';
+      if (c === 'auth/invalid-email') return 'errEmail';
+      if (c === 'auth/user-not-found') return 'errNoUser';
+      if (c === 'auth/wrong-password' || c === 'auth/invalid-credential' || c === 'auth/invalid-login-credentials') return 'errWrong';
+      if (c === 'auth/email-already-in-use') return 'errExists';
+      if (c === 'auth/weak-password') return 'errPassShort';
+      if (c === 'auth/network-request-failed') return 'errNetwork';
+      if (c === 'auth/too-many-requests') return 'errMany';
+      if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') return 'errPopup';
+      if (c === 'local/google') return 'errGoogleLocal';
+      if (c === 'local/reset') return 'errResetLocal';
+      return 'errGeneric';
+    }
+
+    /* =====================================================
+       5) THEME & LANGUAGE
+       ===================================================== */
+    const ICON_MOON = '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+    const ICON_SUN = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+
+    function applyTheme(th) {
+      THEME = th === 'light' ? 'light' : 'dark';
+      document.body.classList.toggle('light-mode', THEME === 'light');
+      $('themeToggle').checked = THEME === 'light';
+      const icon = THEME === 'light' ? ICON_SUN : ICON_MOON;
+      $('themeIcon').innerHTML = icon;
+      $('themeIcon').style.display = 'flex';
+      $('authThemeBtn').innerHTML = icon;
+      try { localStorage.setItem('mc_theme', THEME); } catch (e) {}
+    }
+    function setTheme(th) { applyTheme(th); saveProfile({ theme: THEME }); }
+    function quickToggleTheme() { setTheme(THEME === 'light' ? 'dark' : 'light'); }
+
+    function applyLang(l) {
+      if (!T[l]) l = 'en';
+      LANG = l;
+      try { localStorage.setItem('mc_lang', l); } catch (e) {}
+      const h = document.documentElement;
+      h.lang = l; h.dir = l === 'ar' ? 'rtl' : 'ltr';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = (el.dataset.emoji ? el.dataset.emoji + ' ' : '') + t(el.dataset.i18n);
+      });
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+      $('authLang').value = l; $('settingsLang').value = l;
+      updateCounts();
+      refreshTitle();
+      if ($('sideDrawerPage').classList.contains('open') && activeCategory) {
+        $('sideDrawerTitle').innerText = t('c_' + activeCategory);
+        renderSideDrawerItems(wardrobeData[activeCategory]);
+      }
+      renderDirectGrid('dailyRack');
+      renderDirectGrid('laundry');
+    }
+    function setLang(l) { applyLang(l); saveProfile({ lang: LANG }); }
+
+    function refreshTitle() {
+      const keys = { closet: 'titleCloset', daily: 'titleWorn', laundry: 'titleLaundry', settings: 'titleSettings' };
+      $('headerTitle').innerText = t(keys[currentTab] || 'titleCloset');
+    }
+
+    /* =====================================================
+       6) PROFILE
+       ===================================================== */
+    function saveProfile(patch) {
+      if (!currentUser || !profile) return;
+      Object.assign(profile, patch);
+      Backend.setProfile(currentUser.uid, patch).catch(e => { console.error(e); toast(t('errData')); });
+    }
+
+    function renderProfile() {
+      const name = (profile && profile.name) || 'Pure';
+      $('profileNameText').innerText = name;
+      $('emailText').innerText = (currentUser && currentUser.email) || '';
+      ['headerProfileAvatar', 'settingsAvatar'].forEach(id => {
+        const el = $(id);
+        el.innerHTML = '';
+        if (profile && profile.photo) {
+          const im = document.createElement('img');
+          im.src = profile.photo;
+          el.appendChild(im);
+        } else {
+          el.textContent = (name[0] || '?').toUpperCase();
+        }
+      });
+    }
+
+    let editingName = false;
+    function startInlineNameEdit() {
+      if (editingName) return;
+      editingName = true;
+      const container = $('nameContainer');
+      const currentName = $('profileNameText').innerText;
+      container.innerHTML = '<input type="text" id="inlineInput" class="inline-name-input" maxlength="30">';
+      const input = $('inlineInput');
+      input.value = currentName;
+      input.focus();
+      input.select();
+      input.addEventListener('blur', finishInlineEdit);
+      input.addEventListener('keypress', e => { if (e.key === 'Enter') finishInlineEdit(); });
+    }
+
+    function finishInlineEdit() {
+      const input = $('inlineInput');
+      if (!input || !editingName) return;
+      editingName = false;
+      const newName = input.value.trim() || (profile && profile.name) || 'Pure';
+      $('nameContainer').innerHTML =
+        '<span id="profileNameText"></span>' +
+        '<button class="edit-pencil-btn" onclick="startInlineNameEdit()"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>';
+      $('profileNameText').innerText = newName;
+      saveProfile({ name: newName });
+      renderProfile();
+    }
+
+    function updateProfileAvatar(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const size = 256;
+          const sc = Math.max(size / img.width, size / img.height);
+          const w = img.width * sc, h = img.height * sc;
+          const canvas = document.createElement('canvas');
+          canvas.width = size; canvas.height = size;
+          canvas.getContext('2d').drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+          saveProfile({ photo: canvas.toDataURL('image/jpeg', 0.82) });
+          renderProfile();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* =====================================================
+       7) AUTH SCREENS LOGIC
+       ===================================================== */
+    function showAuthPage(page) {
+      ['loginCard', 'signupCard', 'forgotCard'].forEach(id => $(id).style.display = 'none');
+      ['loginMsg', 'signupMsg', 'forgotMsg'].forEach(id => { $(id).textContent = ''; });
+      $(page + 'Card').style.display = 'flex';
+    }
+
+    function authMsg(id, key, ok) {
+      const el = $(id);
+      el.textContent = key ? t(key) : '';
+      el.className = 'auth-msg' + (ok ? ' ok' : '');
+    }
+    function busy(id, b) { $(id).disabled = b; }
+    const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+    function autoAge() {
+      const v = $('signupDob').value;
+      if (!v) return;
+      const d = new Date(v), n = new Date();
+      let a = n.getFullYear() - d.getFullYear();
+      const m = n.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && n.getDate() < d.getDate())) a--;
+      if (a >= 0 && a < 121) $('signupAge').value = a;
+    }
+
+    async function doLogin() {
+      const email = $('loginEmail').value.trim();
+      const pass = $('loginPass').value;
+      if (!email || !pass) return authMsg('loginMsg', 'errFill');
+      if (!validEmail(email)) return authMsg('loginMsg', 'errEmail');
+      authMsg('loginMsg', '');
+      busy('btnLogin', true);
+      try { await Backend.signIn(email, pass); }
+      catch (e) { console.error(e); authMsg('loginMsg', errKey(e)); }
+      busy('btnLogin', false);
+    }
+
+    async function doGoogle() {
+      authMsg('loginMsg', '');
+      try { await Backend.google(); }
+      catch (e) { console.error(e); authMsg('loginMsg', errKey(e)); }
+    }
+
+    async function doSignup() {
+      const name = $('signupName').value.trim();
+      const email = $('signupEmail').value.trim();
+      const pass = $('signupPass').value;
+      const pass2 = $('signupPass2').value;
+      if (!name || !email || !pass) return authMsg('signupMsg', 'errFill');
+      if (!validEmail(email)) return authMsg('signupMsg', 'errEmail');
+      if (pass.length < 6) return authMsg('signupMsg', 'errPassShort');
+      if (pass !== pass2) return authMsg('signupMsg', 'errPassMatch');
+      authMsg('signupMsg', '');
+      busy('btnSignup', true);
+      signingUp = true;
+      try {
+        const user = await Backend.signUp(email, pass, name);
+        const p = { name, dob: $('signupDob').value || '', age: $('signupAge').value || '', photo: '', lang: LANG, theme: THEME };
+        try { await Backend.setProfile(user.uid, p); } catch (e) { console.error(e); toast(t('errData')); }
+        signingUp = false;
+        await enterApp(user);
+      } catch (e) {
+        console.error(e);
+        signingUp = false;
+        authMsg('signupMsg', errKey(e));
+      }
+      busy('btnSignup', false);
+    }
+
+    async function doReset() {
+      const email = $('forgotEmail').value.trim();
+      if (!email) return authMsg('forgotMsg', 'errFill');
+      if (!validEmail(email)) return authMsg('forgotMsg', 'errEmail');
+      authMsg('forgotMsg', '');
+      busy('btnForgot', true);
+      try { await Backend.reset(email); authMsg('forgotMsg', 'resetSent', true); }
+      catch (e) { console.error(e); authMsg('forgotMsg', errKey(e)); }
+      busy('btnForgot', false);
+    }
+
+    async function handleLogOut() {
+      try { await Backend.out(); } catch (e) { console.error(e); }
+      location.reload();
+    }
+
+    /* =====================================================
+       8) ENTER APP  (load user data after login)
+       ===================================================== */
+    async function enterApp(user) {
+      if (entering) return;
+      entering = true;
+      try {
+        currentUser = user;
+        let p = null;
+        try { p = await Backend.getProfile(user.uid); } catch (e) { console.error(e); toast(t('errData')); }
+        if (!p) {
+          p = {
+            name: user.name || (user.email ? user.email.split('@')[0] : 'Pure'),
+            photo: user.photo || '', dob: '', age: '', lang: LANG, theme: THEME
+          };
+          try { await Backend.setProfile(user.uid, p); } catch (e) { console.error(e); toast(t('errData')); }
+        }
+        profile = p;
+        if (p.theme) applyTheme(p.theme);
+        if (p.lang && T[p.lang]) applyLang(p.lang);
+
+        wardrobeData = { hanging: [], pants: [], tops: [], underwear: [], socks: [], dailyRack: [], laundry: [] };
+        try {
+          const gs = await Backend.getGarments(user.uid);
+          gs.sort((a, b) => a.id - b.id).forEach(g => {
+            const place = wardrobeData[g.place] ? g.place : (wardrobeData[g.homeDrawer] ? g.homeDrawer : 'hanging');
+            g.place = place;
+            wardrobeData[place].push(g);
+          });
+        } catch (e) { console.error(e); toast(t('errData')); }
+
+        renderProfile();
+        updateCounts();
+        renderDirectGrid('dailyRack');
+        renderDirectGrid('laundry');
+        switchTab('closet');
+        $('authOverlay').classList.add('hidden');
+      } finally {
+        entering = false;
+      }
+    }
+
+    /* =====================================================
+       9) WARDROBE UI
+       ===================================================== */
+    function openSideDrawerPage(category) {
+      activeCategory = category;
+      $('sideDrawerTitle').innerText = t('c_' + category);
+      renderSideDrawerItems(wardrobeData[category]);
+      $('sideDrawerPage').classList.add('open');
+    }
+
+    function closeSideDrawerPage() {
+      $('sideDrawerPage').classList.remove('open');
+    }
+
+    function itemCard(item, onclick) {
+      const card = document.createElement('div');
+      card.className = 'item-card-box';
+      let visual;
+      if (item.image) {
+        visual = document.createElement('img');
+        visual.src = item.image;
+      } else {
+        visual = document.createElement('div');
+        visual.style.cssText = 'width:65px;height:55px;border-radius:6px;background:' + (item.color || '#d4a359');
+      }
+      const title = document.createElement('span');
+      title.className = 'item-card-title';
+      title.textContent = item.name || t('garment');
+      card.appendChild(visual);
+      card.appendChild(title);
+      card.onclick = onclick;
+      return card;
+    }
+
+    function renderSideDrawerItems(items) {
+      const grid = $('sideDrawerItemsGrid');
+      grid.innerHTML = '';
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<div class="empty-note">' + esc(t('noSection')) + '</div>';
+        return;
+      }
+      items.forEach(item => grid.appendChild(itemCard(item, () => triggerGarmentAction(item))));
+    }
+
+    function renderDirectGrid(cat) {
+      const container = $(cat === 'dailyRack' ? 'dailyRackDirectGrid' : 'laundryDirectGrid');
+      container.innerHTML = '';
+      const items = wardrobeData[cat];
+      if (items.length === 0) {
+        container.innerHTML = '<div class="empty-note" style="padding:50px 0;">' + esc(t('noneHere')) + '</div>';
+        return;
+      }
+      items.forEach(item => container.appendChild(itemCard(item, () => triggerGarmentAction(item))));
+    }
+
+    function triggerGarmentAction(item) {
+      activeSelectedItem = item;
+      const inHome = CATS.includes(item.place);
+      $('actWear').style.display = item.place === 'dailyRack' ? 'none' : 'block';
+      $('actLaundry').style.display = item.place === 'laundry' ? 'none' : 'block';
+      $('actBack').style.display = inHome ? 'none' : 'block';
+      $('greenActionOverlay').classList.add('active');
+    }
+
+    function closeGreenActionMenu(e) {
+      if (e.target.id === 'greenActionOverlay') $('greenActionOverlay').classList.remove('active');
+    }
+
+    function refreshAllViews() {
+      updateCounts();
+      if ($('sideDrawerPage').classList.contains('open') && activeCategory) renderSideDrawerItems(wardrobeData[activeCategory]);
+      renderDirectGrid('dailyRack');
+      renderDirectGrid('laundry');
+    }
+
+    function executeAction(type) {
+      $('greenActionOverlay').classList.remove('active');
+      const item = activeSelectedItem;
+      if (!item || !currentUser) return;
+
+      wardrobeData[item.place] = wardrobeData[item.place].filter(i => i.id !== item.id);
+
+      if (type === 'delete') {
+        Backend.delGarment(currentUser.uid, item.id).catch(e => { console.error(e); toast(t('errData')); });
+      } else {
+        item.place = type === 'wear' ? 'dailyRack' : type === 'laundry' ? 'laundry' : (item.homeDrawer || 'hanging');
+        wardrobeData[item.place].push(item);
+        Backend.setGarment(currentUser.uid, item).catch(e => { console.error(e); toast(t('errData')); });
+      }
+      refreshAllViews();
+    }
+
+    function openAddSourceModal() { $('sourceModal').classList.add('active'); }
+    function closeSourceModal() { $('sourceModal').classList.remove('active'); }
+    function triggerCamera() { closeSourceModal(); $('cameraInput').click(); }
+
+    function processGarmentImage(img) {
+      let max = 480, out = '';
+      do {
+        const sc = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * sc)), h = Math.max(1, Math.round(img.height * sc));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const brightness = (r + g + b) / 3;
+          const colorDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+          if ((brightness > 165 && colorDiff < 25) || (brightness > 210)) data[i + 3] = 0;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        out = canvas.toDataURL('image/webp', 0.85);
+        max = Math.round(max * 0.7);
+      } while (out.length > 700000 && max > 120);
+      return out;
+    }
+
+    function handleImageUpload(event) {
+      closeSourceModal();
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          pendingImageSrc = processGarmentImage(img);
+          $('previewUploadedImg').src = pendingImageSrc;
+          $('garmentNameInput').value = '';
+          selectDrawerOption(document.querySelector('#assignmentModal [data-value="hanging"]'));
+          $('assignmentModal').classList.add('active');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function selectDrawerOption(btn) {
+      document.querySelectorAll('#assignmentModal .btn-essembl[data-value]').forEach(b => {
+        b.style.background = 'var(--card-soft)';
+        b.style.color = 'var(--text-dark)';
+      });
+      btn.style.background = 'var(--accent-warm)';
+      btn.style.color = THEME === 'light' ? '#fff' : 'var(--bg-main)';
+      selectedTargetDrawer = btn.getAttribute('data-value');
+    }
+
+    async function confirmGarmentAssignment() {
+      if (!currentUser || !pendingImageSrc) return;
+      const newItem = {
+        id: Date.now(),
+        name: $('garmentNameInput').value.trim() || t('garment'),
+        color: '#d4a359',
+        image: pendingImageSrc,
+        homeDrawer: selectedTargetDrawer,
+        place: selectedTargetDrawer
+      };
+      busy('btnSaveGarment', true);
+      try {
+        await Backend.setGarment(currentUser.uid, newItem);
+        wardrobeData[selectedTargetDrawer].push(newItem);
+        pendingImageSrc = null;
+        $('assignmentModal').classList.remove('active');
+        refreshAllViews();
+      } catch (e) {
+        console.error(e);
+        toast(t('errData'));
+      }
+      busy('btnSaveGarment', false);
+    }
+
+    function updateCounts() {
+      CATS.forEach(cat => {
+        const el = $('count-' + cat);
+        if (el) el.innerText = t('items', { n: wardrobeData[cat].length });
+      });
+    }
+
+    function toggleCloset() {
+      closetOpen = !closetOpen;
+      $('doorLeft').classList.toggle('open-left', closetOpen);
+      $('doorRight').classList.toggle('open-right', closetOpen);
+    }
+
+    function switchTab(tabId) {
+      closeSideDrawerPage();
+      currentTab = tabId;
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      $('tab-' + tabId).classList.add('active');
+      if ($('nav-' + tabId)) $('nav-' + tabId).classList.add('active');
+      refreshTitle();
+    }
+
+    /* =====================================================
+       10) BOOT
+       ===================================================== */
+    let splashTimerDone = false, authDone = false;
+    function maybeHideSplash() {
+      if (splashTimerDone && authDone) $('splashScreen').classList.add('fade-out');
+    }
+    setTimeout(() => { splashTimerDone = true; maybeHideSplash(); }, 1500);
+    setTimeout(() => { authDone = true; maybeHideSplash(); }, 7000);
+
+    applyTheme(THEME);
+    applyLang(LANG);
+    if (!CONFIGURED) $('localNotice').style.display = 'block';
+
+    Backend.onAuth(async user => {
+      if (signingUp) return;
+      if (user) {
+        try { await enterApp(user); } catch (e) { console.error(e); toast(t('errGeneric')); }
+      }
+      authDone = true;
+      maybeHideSplash();
+    });
+  </script>
+</body>
+</html>

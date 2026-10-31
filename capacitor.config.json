@@ -1,0 +1,8 @@
+{
+  "appId": "com.pure.mycloset",
+  "appName": "My Closet",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
